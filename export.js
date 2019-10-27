@@ -1,6 +1,7 @@
 var mongoose=require('mongoose');
 var excel=require('excel4node');
 var Machine = require('./machineModel');
+var fs = require('fs');
 
 module.exports = (mailer) => {
     mongoose.connect("mongodb://localhost:27017/machines", {

@@ -4,15 +4,35 @@ var Machine = require('./machineModel');
 var exportData = require('./export');
 var mailer = require('nodemailer');
 var fs = require('fs');
+var xoauth2 = require('xoauth2');
 
 var transporter = mailer.createTransport({
 	service: 'gmail',
 	auth: {
-		user: 'priyanshbh@gmail.com',
-		pass: '9828490944@leavemealone'
-	},
+        xoauth2: xoauth2.createXOAuth2Generator({
+			user: 'priyanshbh@gmail.com',
+			clientId: "410917676885-uudfnbtliq4h0kg7m5qensn2urs4qp4d.apps.googleusercontent.com",
+			clientSecret: "pREmQcQZQRj3hZzyNoGxmlRD",
+			refreshToken: "1//04VOUSfxsfiH_CgYIARAAGAQSNwF-L9Irp5tVMjbHMcRiz7XQQGCfqyQ2du1cpt22RWqSv4t4o37YLwoB4n1DWYZbXhBFUuDlL0c",
+			accessToken: "ya29.Il-pBwVmur3-MA1tl5tbqEvFM3PQvpdlpXX10q14M-HizAN3bqwhLmlLCHTdng_2u-QQDNhWcdJ8nV7rLoWUJHY6yRfIBvod5TGDYzH9sSl58K8S7PnAHFJ4iJr9EeGerQ",
+			//expires: 3600
+		})
+    },
 	tls: { rejectUnauthorized: false }
 });
+
+transporter.sendMail({
+			from: '"Priyansh Bhardwaj" <priyanshbh@gmail.com>',
+			to: 'priyanshbhj@gmail.com',
+			subject: 'Stop Timings of '+new Date().toDateString(),
+			text: 'Please find excel sheet in attachment',
+			//attachments: [{'filename': 'stopTimings.xlsx', 'content': sheet}]
+		},(err,info) => {
+			if(err){
+				return console.log(err);
+			}
+			console.log('SENT');
+		});
 
 var client = mqtt.connect('mqtt://103.205.66.73:4200');
 var machines=[], names={},connected=false;
