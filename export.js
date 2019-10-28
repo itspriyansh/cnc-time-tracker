@@ -59,19 +59,20 @@ module.exports = (mailer) => {
                 sheet.cell(machine.stopDurations.length+3,3).string(hh+':'+mm+':'+ss).style(style);
             }
         });
-        workbook.write('./data/stopTimings.xlsx');
-		
-		var sheet=fs.readFileSync('./data/stopTimings.xlsx');
-		mailer.sendMail({
-			from: '"Priyansh Bhardwaj" <priyanshbh@gmail.com>',
-			to: 'priyanshbhj@gmail.com',
-			subject: 'Stop Timings of '+new Date().toDateString(),
-			text: 'Please find excel sheet in attachment',
-			attachments: [{'filename': 'stopTimings.xlsx', 'content': sheet}]
-		},(err,info) => {
-			if(err){
-				return console.log(err);
-			}
+        workbook.write('./data/stopTimings.xlsx')
+		.then(() => {
+			var sheet=fs.readFileSync('./data/stopTimings.xlsx');
+			mailer.sendMail({
+				from: '"Priyansh Bhardwaj" <priyanshbh@gmail.com>',
+				to: 'priyanshbhj@gmail.com',
+				subject: 'Stop Timings of '+new Date().toDateString(),
+				text: 'Please find excel sheet in attachment',
+				attachments: [{'filename': 'stopTimings.xlsx', 'content': sheet}]
+			},(err,info) => {
+				if(err){
+					return console.log(err);
+				}
+			});
 		});
         console.log("Stop duration exported at data/stopTimings.xlsx Successfully!");
     },(err) => console.log(err));
