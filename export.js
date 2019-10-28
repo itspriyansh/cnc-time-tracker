@@ -72,6 +72,6 @@ module.exports = (mailer) => {
 				}
 			});
 		});
-        console.log("Stop duration exported at data/stopTimings.xlsx Successfully!");
+        console.log("Stop duration is sent via mail Successfully!");
     },(err) => console.log(err));
 }
