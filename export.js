@@ -1,7 +1,6 @@
 var mongoose=require('mongoose');
 var excel=require('excel4node');
 var Machine = require('./machineModel');
-var fs = require('fs');
 
 module.exports = (mailer) => {
     mongoose.connect("mongodb://localhost:27017/machines", {
@@ -59,9 +58,8 @@ module.exports = (mailer) => {
                 sheet.cell(machine.stopDurations.length+3,3).string(hh+':'+mm+':'+ss).style(style);
             }
         });
-        workbook.write('./data/stopTimings.xlsx')
-		.then(() => {
-			var sheet=fs.readFileSync('./data/stopTimings.xlsx');
+        workbook.writeToBuffer()
+		.then((sheet) => {
 			mailer.sendMail({
 				from: '"Priyansh Bhardwaj" <priyanshbh@gmail.com>',
 				to: 'priyanshbhj@gmail.com',
