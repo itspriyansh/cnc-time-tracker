@@ -3,8 +3,6 @@ var mongoose = require('mongoose');
 var Machine = require('./machineModel');
 var exportData = require('./export');
 var mailer = require('nodemailer');
-var fs = require('fs');
-var xoauth2 = require('xoauth2');
 
 var transporter = mailer.createTransport({
 	service: 'gmail',
@@ -16,7 +14,7 @@ var transporter = mailer.createTransport({
 });
 
 var client = mqtt.connect('mqtt://103.205.66.73:4200');
-var machines=[], names={},connected=false;
+var machines=[], names={},connected=false,stopped=false;
 
 client.on('connect',()=>{
     client.subscribe('CNC');
@@ -28,13 +26,15 @@ mongoose.connect("mongodb://localhost:27017/machines", {
     useUnifiedTopology: true
 }).then(() => {
     console.log("Successfully connected to server!");
-
+	
+	var actualEnd;
     client.on('message',(topic,body) => {
         let data=JSON.parse(body), toInsert=[];
         let today=new Date(data.timestamp), Dt=today.getDate(), Mn=today.getMonth(), Yr=today.getFullYear();
         let start=new Date(Yr,Mn,Dt,9,0,0,0), endD=new Date(Yr,Mn,Dt,18,0,0,0);
-        if(!connected){
+        if(!stopped && !connected){
             if(today.getTime()>=start.getTime() && today.getTime()<=endD.getTime()){
+				stopped=true;
                 console.log("Stop durations are being tracked...");
                 Machine.updateMany({},{
                     functioning: true,
@@ -56,13 +56,14 @@ mongoose.connect("mongodb://localhost:27017/machines", {
                             stopDurations: mac.stopDurations
                         });
                     });
-                    connected=true;
+					connected=true;
+					stopped=false;
                 },(err) => console.log(err));
             }
         }
-        if(connected){
+        else if(!stopped){
             for(let key in data){
-                if(key==='timestamp') continue;
+                if(key==='timestamp' || key==='watch_dog') continue;
                 if(names[key]===undefined){
                     let obj={
                         name: key,
@@ -71,7 +72,7 @@ mongoose.connect("mongodb://localhost:27017/machines", {
                     let date=(data[key]?'startTime':'stopTime');
                     obj[date]=data.timestamp;
                     toInsert.push(obj);
-                }else{
+                }else if(key!=='watch_dog'){
                     if(machines[names[key]].functioning!==data[key]){
                         machines[names[key]].functioning=data[key];
                         let date=(data[key]?'startTime':'stopTime');
@@ -119,8 +120,9 @@ mongoose.connect("mongodb://localhost:27017/machines", {
                     toInsert=[];
                 });
             };
-            if(new Date(data.timestamp).getTime()>=endD.getTime()){
-                exportData(transporter);
+            if(today.getTime()>=endD.getTime()){
+				actualEnd=today;
+                exportData(transporter, start, actualEnd);
                 connected=false;
                 console.log("Tracking is stopped for today!");
             }

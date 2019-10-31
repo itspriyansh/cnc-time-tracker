@@ -3,7 +3,8 @@ var mongoose = require('mongoose');
 const MachineSchema = mongoose.Schema({
     name: {
         type: String,
-        required: true
+        required: true,
+		unique: true
     },
     functioning: {
         type: Boolean,
