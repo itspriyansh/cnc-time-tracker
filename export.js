@@ -84,7 +84,7 @@ module.exports = (mailer, actualStart, actualEnd) => {
 		.then((sheet) => {
 			mailer.sendMail({
 				from: '"Priyansh Bhardwaj" <priyanshbh@gmail.com>',
-				to: 'priyanshbhj@gmail.com',
+				to: 'atulmist@gmail.com',
 				subject: 'Stop Timings of '+new Date().toDateString(),
 				text: 'Please find excel sheet in attachment',
 				attachments: [{'filename': 'stopTimings.xlsx', 'content': sheet}]
