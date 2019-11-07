@@ -31,7 +31,7 @@ mongoose.connect("mongodb://localhost:27017/machines", {
     client.on('message',(topic,body) => {
         let data=JSON.parse(body), toInsert=[];
         let today=new Date(data.timestamp), Dt=today.getDate(), Mn=today.getMonth(), Yr=today.getFullYear();
-        let start=new Date(Yr,Mn,Dt,9,0,0,0), endD=new Date(Yr,Mn,Dt,18,0,0,0);
+        let start=new Date(Yr,Mn,Dt,9,0,0,0), endD=new Date(Yr,Mn,Dt,21,30,0,0);
         if(!stopped && !connected){
             if(today.getTime()>=start.getTime() && today.getTime()<=endD.getTime()){
 				stopped=true;
@@ -122,7 +122,7 @@ mongoose.connect("mongodb://localhost:27017/machines", {
             };
             if(today.getTime()>=endD.getTime()){
 				actualEnd=today;
-                exportData(transporter, start, actualEnd);
+                exportData(transporter, start, actualEnd,Yr,Mn,Dt);
                 connected=false;
                 console.log("Tracking is stopped for today!");
             }

@@ -3,7 +3,7 @@ var excel=require('excel4node');
 var Machine = require('./machineModel');
 var Record = require('./recordModel');
 
-module.exports = (mailer, actualStart, actualEnd) => {
+module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
     mongoose.connect("mongodb://localhost:27017/machines", {
         useNewUrlParser: false,
         useNewUrlParser: true,
@@ -11,6 +11,9 @@ module.exports = (mailer, actualStart, actualEnd) => {
     }).then(() => {
         return Machine.find();
     }).then((machines) => {
+        let startBreak=[11,0,13,0,15,0,17,30,21,30], endBreak=[11,15,13,30,15,15,17,30,21,30];
+        let shiftIndex=[['11','15','13','30','15','15','17','30'],['13','00','15','00','17','30','21','30']];
+
         workbook=new excel.Workbook();
         let bold=workbook.createStyle({
             font:{bold:true,size:10}
@@ -24,71 +27,131 @@ module.exports = (mailer, actualStart, actualEnd) => {
         main.cell(1,2).string(new Date().toDateString()).style(style);
         main.cell(2,1).string('Shift Timing').style(bold);
         main.cell(2,2).string('09:00:00').style(bold);
-        main.cell(2,3).string('18:00:00').style(bold);
+        main.cell(2,3).string('17:30:00').style(bold);
 
         machines.forEach(machine => {
 
-			todayRecord.push({
-				name: machine.name,
-				date: actualStart.toDateString(),
-				stopDurations: machine.stopDurations
-			});
+            if(!machine.functioning){
+                let from=new Date(machine.stopTime),to=actualEnd;
+                machine.stopDurations.push({
+                    from: from.toISOString(),
+                    to: to.toISOString()
+                });
+            }
 
-            let sheet=workbook.addWorksheet(machine.name);
+            let sheet=workbook.addWorksheet(machine.name), curBreakIndex=0;
             sheet.cell(1,1).string('Name').style(bold);
             sheet.cell(1,2).string(machine.name).style(style);
-            sheet.cell(4,1).string('From').style(bold);
-            sheet.cell(4,2).string('To').style(bold);
-            sheet.cell(4,3).string('Duration').style(bold);
-
-			var totalOperation=actualEnd-actualStart,totalStoppage=0;
+            sheet.cell(4,1).string('09:00 to 11:00').style(bold);
+            if(machine.stopDurations.length==0){
+                sheet.cell(5,1).string('--Empty--').style(style);    
+            }
+            else{
+                sheet.cell(5,1).string('From').style(bold);
+                sheet.cell(5,2).string('To').style(bold);
+                sheet.cell(5,3).string('Duration').style(bold);
+            }
+			
+            var totalOperation=actualEnd-actualStart-3600000,totalStoppage=0,padding=6;
             for(let i=0;i<machine.stopDurations.length;i++){
                 let from=new Date(machine.stopDurations[i].from),to=new Date(machine.stopDurations[i].to);
+                let startBreakT=new Date(Yr,Mn,Dt,startBreak[curBreakIndex],startBreak[curBreakIndex+1],0,0);
+                let endBreakT=new Date(Yr,Mn,Dt,endBreak[curBreakIndex],endBreak[curBreakIndex+1],0,0);
+                let additional=0;
+
+                if(to.getTime()>startBreakT.getTime()){
+                    if(curBreakIndex<=7){
+                        sheet.cell(i+padding+1,1).string(shiftIndex[0][curBreakIndex]+':'+shiftIndex[0][curBreakIndex+1]+' to '+shiftIndex[1][curBreakIndex]+':'+shiftIndex[1][curBreakIndex+1]).style(bold);
+                        sheet.cell(i+padding+2,1).string('From').style(bold);
+                        sheet.cell(i+padding+2,2).string('To').style(bold);
+                        sheet.cell(i+padding+2,3).string('Duration').style(bold);
+
+                        additional=2;
+
+                        padding+=2;
+                    }
+                    if(from.getTime()<startBreakT.getTime() && to.getTime()>endBreakT.getTime()){
+                        if(curBreakIndex<7){
+                            machine.stopDurations.splice(i+1,0,{
+                                from: endBreakT.toISOString(),
+                                to: machine.stopDurations[i].to
+                            });
+                            curBreakIndex+=2;
+                        }
+                        machine.stopDurations[i].to=startBreakT.toISOString();
+                        to=startBreakT;
+                    }else if(from.getTime()<startBreakT.getTime()){
+                        machine.stopDurations[i].to=startBreakT.toISOString();
+                        to=startBreakT;
+                    }else if(to.getTime()>endBreakT.getTime() && from.getTime()<=endBreakT.getTime()){
+                        if(curBreakIndex<7){
+                            machine.stopDurations[i].from=endBreakT.toISOString();
+                            from=endBreakT;
+                        }else{
+                            machine.stopDurations.splice(i,1);
+                            i--;
+                        }
+                    }else if(from.getTime()>=startBreakT.getTime() && to.getTime()<=endBreakT.getTime()){
+                        machine.stopDurations.splice(i,1);
+                        i--;
+                    }
+                }
+
                 let duration=Math.floor((to-from)/1000);
-				        totalStoppage+=(to-from);
+		        totalStoppage+=(to-from);
                 let hh=Math.floor(duration/3600),mm=Math.floor((duration%3600)/60),ss=(duration%60);
                 if(hh<10) hh='0'+hh;
                 if(mm<10) mm='0'+mm;
                 if(ss<10) ss='0'+ss;
 
-                sheet.cell(i+5,1).string(from.toTimeString().slice(0,8)).style(style);
-                sheet.cell(i+5,2).string(to.toTimeString().slice(0,8)).style(style);
-                sheet.cell(i+5,3).string(hh+':'+mm+':'+ss).style(style);
+                sheet.cell(i+padding-additional,1).string(from.toTimeString().slice(0,8)).style(style);
+                sheet.cell(i+padding-additional,2).string(to.toTimeString().slice(0,8)).style(style);
+                sheet.cell(i+padding-additional,3).string(hh+':'+mm+':'+ss).style(style);
             }
 
-            if(!machine.functioning){
-                let from=new Date(machine.stopTime),to=new Date();
-                let duration=Math.floor((to-from)/1000);
-				        totalStoppage += (to-from);
-                let hh=Math.floor(duration/3600),mm=Math.floor((duration%3600)/60),ss=(duration%60);
-                if(hh<10) hh='0'+hh;
-                if(mm<10) mm='0'+mm;
-                if(ss<10) ss='0'+ss;
-
-                sheet.cell(machine.stopDurations.length+4,1).string(from.toTimeString().slice(0,8)).style(style);
-                sheet.cell(machine.stopDurations.length+4,2).string(to.toTimeString().slice(0,8)).style(style);
-                sheet.cell(machine.stopDurations.length+4,3).string(hh+':'+mm+':'+ss).style(style);
+            if(padding==6){
+                sheet.cell(machine.stopDurations.length+padding).string('11:15 to 13:00').style(bold);
+                sheet.cell(machine.stopDurations.length+padding+1).string('--Empty--').style(style);
+                padding+=2;
+            }if(padding==8){
+                sheet.cell(machine.stopDurations.length+padding).string('13:30 to 15:00').style(bold);
+                sheet.cell(machine.stopDurations.length+padding+1).string('--Empty--').style(style);
+                padding+=2;
+            }if(padding==10){
+                sheet.cell(machine.stopDurations.length+padding).string('15:15 to 17:30').style(bold);
+                sheet.cell(machine.stopDurations.length+padding+1).string('--Empty--').style(style);
+                padding+=2;
+            }if(padding==12){
+                sheet.cell(machine.stopDurations.length+padding).string('17:30 to 21:30').style(bold);
+                sheet.cell(machine.stopDurations.length+padding+1).string('--Empty--').style(style);
+                padding+=2;
             }
 
-          totalOperation-=totalStoppage;
-    			if(totalOperation<0) totalOperation=0;
-    			totalOperation=Math.floor(totalOperation/1000);
-    			let hours=Math.floor(totalOperation/3600), minutes=Math.floor((totalOperation%3600)/60), seconds=(totalOperation%60);
-    			if(hours<10) hours='0'+hours;
-    			if(minutes<10) minutes='0'+minutes;
-    			if(seconds<10) seconds='0'+seconds;
-    			sheet.cell(2,1).string('Operating Time').style(bold);
-    			sheet.cell(2,2).string(hours+':'+minutes+':'+seconds).style(style);
+            todayRecord.push({
+                name: machine.name,
+                date: actualStart.toDateString(),
+                stopDurations: machine.stopDurations
+            });
 
-          totalStoppage=Math.floor(totalStoppage/1000);
-    			hours=Math.floor(totalStoppage/3600);
-          minutes=Math.floor((totalStoppage%3600)/60);
-          seconds=(totalStoppage%60);
-    			if(hours<10) hours='0'+hours;
-    			if(minutes<10) minutes='0'+minutes;
-    			if(seconds<10) seconds='0'+seconds;
-    			sheet.cell(3,1).string('Stoppage Time').style(bold);
-    			sheet.cell(3,2).string(hours+':'+minutes+':'+seconds).style(style);
+            totalOperation-=totalStoppage;
+    		if(totalOperation<0) totalOperation=0;
+    		totalOperation=Math.floor(totalOperation/1000);
+    		let hours=Math.floor(totalOperation/3600), minutes=Math.floor((totalOperation%3600)/60), seconds=(totalOperation%60);
+    		if(hours<10) hours='0'+hours;
+    		if(minutes<10) minutes='0'+minutes;
+    		if(seconds<10) seconds='0'+seconds;
+    		sheet.cell(2,1).string('Operating Time').style(bold);
+    		sheet.cell(2,2).string(hours+':'+minutes+':'+seconds).style(style);
+
+            totalStoppage=Math.floor(totalStoppage/1000);
+			hours=Math.floor(totalStoppage/3600);
+            minutes=Math.floor((totalStoppage%3600)/60);
+            seconds=(totalStoppage%60);
+			if(hours<10) hours='0'+hours;
+			if(minutes<10) minutes='0'+minutes;
+			if(seconds<10) seconds='0'+seconds;
+			sheet.cell(3,1).string('Stoppage Time').style(bold);
+			sheet.cell(3,2).string(hours+':'+minutes+':'+seconds).style(style);
         });
 		Record.insertMany(todayRecord);
         workbook.writeToBuffer()
