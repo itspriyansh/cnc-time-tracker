@@ -44,32 +44,23 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
             sheet.cell(1,2).string(machine.name).style(style);
             sheet.cell(4,1).string('09:00 to 11:00').style(bold);
             if(machine.stopDurations.length==0){
-                sheet.cell(5,1).string('--Empty--').style(style);    
+                sheet.cell(5,1).string('--Empty--').style(style);
             }
             else{
                 sheet.cell(5,1).string('From').style(bold);
                 sheet.cell(5,2).string('To').style(bold);
                 sheet.cell(5,3).string('Duration').style(bold);
             }
-			
+
             var totalOperation=actualEnd-actualStart-3600000,totalStoppage=0,padding=6;
             for(let i=0;i<machine.stopDurations.length;i++){
                 let from=new Date(machine.stopDurations[i].from),to=new Date(machine.stopDurations[i].to);
                 let startBreakT=new Date(Yr,Mn,Dt,startBreak[curBreakIndex],startBreak[curBreakIndex+1],0,0);
                 let endBreakT=new Date(Yr,Mn,Dt,endBreak[curBreakIndex],endBreak[curBreakIndex+1],0,0);
-                let additional=0;
+                let printAfterInt=false;
 
                 if(to.getTime()>startBreakT.getTime()){
-                    if(curBreakIndex<=7){
-                        sheet.cell(i+padding+1,1).string(shiftIndex[0][curBreakIndex]+':'+shiftIndex[0][curBreakIndex+1]+' to '+shiftIndex[1][curBreakIndex]+':'+shiftIndex[1][curBreakIndex+1]).style(bold);
-                        sheet.cell(i+padding+2,1).string('From').style(bold);
-                        sheet.cell(i+padding+2,2).string('To').style(bold);
-                        sheet.cell(i+padding+2,3).string('Duration').style(bold);
-
-                        additional=2;
-
-                        padding+=2;
-                    }
+                    
                     if(from.getTime()<startBreakT.getTime() && to.getTime()>endBreakT.getTime()){
                         if(curBreakIndex<7){
                             machine.stopDurations.splice(i+1,0,{
@@ -80,9 +71,12 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
                         }
                         machine.stopDurations[i].to=startBreakT.toISOString();
                         to=startBreakT;
+                        printAfterInt=true;
                     }else if(from.getTime()<startBreakT.getTime()){
                         machine.stopDurations[i].to=startBreakT.toISOString();
                         to=startBreakT;
+                        curBreakIndex+=2;
+                        printAfterInt=true;
                     }else if(to.getTime()>endBreakT.getTime() && from.getTime()<=endBreakT.getTime()){
                         if(curBreakIndex<7){
                             machine.stopDurations[i].from=endBreakT.toISOString();
@@ -90,10 +84,22 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
                         }else{
                             machine.stopDurations.splice(i,1);
                             i--;
+                            continue;
                         }
                     }else if(from.getTime()>=startBreakT.getTime() && to.getTime()<=endBreakT.getTime()){
                         machine.stopDurations.splice(i,1);
                         i--;
+                        continue;
+                    }
+                }
+                if(!printAfterInt){
+                    if(curBreakIndex<=7){
+                        sheet.cell(i+padding,1).string(shiftIndex[0][curBreakIndex]+':'+shiftIndex[0][curBreakIndex+1]+' to '+shiftIndex[1][curBreakIndex]+':'+shiftIndex[1][curBreakIndex+1]).style(bold);
+                        sheet.cell(i+padding+1,1).string('From').style(bold);
+                        sheet.cell(i+padding+1,2).string('To').style(bold);
+                        sheet.cell(i+padding+1,3).string('Duration').style(bold);
+
+                        padding+=2;
                     }
                 }
 
@@ -104,9 +110,20 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
                 if(mm<10) mm='0'+mm;
                 if(ss<10) ss='0'+ss;
 
-                sheet.cell(i+padding-additional,1).string(from.toTimeString().slice(0,8)).style(style);
-                sheet.cell(i+padding-additional,2).string(to.toTimeString().slice(0,8)).style(style);
-                sheet.cell(i+padding-additional,3).string(hh+':'+mm+':'+ss).style(style);
+                sheet.cell(i+padding,1).string(from.toTimeString().slice(0,8)).style(style);
+                sheet.cell(i+padding,2).string(to.toTimeString().slice(0,8)).style(style);
+                sheet.cell(i+padding,3).string(hh+':'+mm+':'+ss).style(style);
+
+                if(printAfterInt){
+                    if(curBreakIndex<=7){
+                        sheet.cell(i+padding+1,1).string(shiftIndex[0][curBreakIndex]+':'+shiftIndex[0][curBreakIndex+1]+' to '+shiftIndex[1][curBreakIndex]+':'+shiftIndex[1][curBreakIndex+1]).style(bold);
+                        sheet.cell(i+padding+2,1).string('From').style(bold);
+                        sheet.cell(i+padding+2,2).string('To').style(bold);
+                        sheet.cell(i+padding+2,3).string('Duration').style(bold);
+
+                        padding+=2;
+                    }
+                }
             }
 
             if(padding==6){
@@ -158,7 +175,7 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
 		.then((sheet) => {
 			mailer.sendMail({
 				from: '"Priyansh Bhardwaj" <priyanshbh@gmail.com>',
-				to: 'atulmist@gmail.com',
+				to: 'priyanshbhj@gmail.com',
 				subject: 'Stop Timings of '+new Date().toDateString(),
 				text: 'Please find excel sheet in attachment',
 				attachments: [{'filename': 'StopTimings '+new Date().toDateString()+'.xlsx', 'content': sheet}]
