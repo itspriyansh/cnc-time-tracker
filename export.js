@@ -12,7 +12,10 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
         return Machine.find();
     }).then((machines) => {
         let startBreak=[11,0,13,0,15,0,17,30,21,30], endBreak=[11,15,13,30,15,15,17,30,21,30];
-        let shiftIndex=[['11','15','13','30','15','15','17','30'],['13','00','15','00','17','30','21','30']];
+        let shiftIndex=[
+            ['09','00','11','15','13','30','15','15','17','30'],
+            ['11','00','13','00','15','00','17','30','21','30']
+        ];
 
         workbook=new excel.Workbook();
         let bold=workbook.createStyle({
@@ -40,17 +43,7 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
             }
 
             let sheet=workbook.addWorksheet(machine.name), curBreakIndex=0;
-            sheet.cell(1,1).string('Name').style(bold);
-            sheet.cell(1,2).string(machine.name).style(style);
-            sheet.cell(4,1).string('09:00 to 11:00').style(bold);
-            if(machine.stopDurations.length==0){
-                sheet.cell(5,1).string('--Empty--').style(style);
-            }
-            else{
-                sheet.cell(5,1).string('From').style(bold);
-                sheet.cell(5,2).string('To').style(bold);
-                sheet.cell(5,3).string('Duration').style(bold);
-            }
+            let written=[false,false,false,false,false];
 
             var totalOperation=actualEnd-actualStart-3600000,totalStoppage=0,padding=6;
             for(let i=0;i<machine.stopDurations.length;i++){
@@ -71,35 +64,36 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
                         }
                         machine.stopDurations[i].to=startBreakT.toISOString();
                         to=startBreakT;
-                        printAfterInt=true;
                     }else if(from.getTime()<startBreakT.getTime()){
                         machine.stopDurations[i].to=startBreakT.toISOString();
                         to=startBreakT;
                         curBreakIndex+=2;
-                        printAfterInt=true;
                     }else if(to.getTime()>endBreakT.getTime() && from.getTime()<=endBreakT.getTime()){
                         if(curBreakIndex<7){
                             machine.stopDurations[i].from=endBreakT.toISOString();
                             from=endBreakT;
+                            curBreakIndex+=2;
                         }else{
                             machine.stopDurations.splice(i,1);
                             i--;
-                            continue;
                         }
+                        continue;
                     }else if(from.getTime()>=startBreakT.getTime() && to.getTime()<=endBreakT.getTime()){
                         machine.stopDurations.splice(i,1);
                         i--;
                         continue;
                     }
                 }
-                if(!printAfterInt){
-                    if(curBreakIndex<=7){
-                        sheet.cell(i+padding,1).string(shiftIndex[0][curBreakIndex]+':'+shiftIndex[0][curBreakIndex+1]+' to '+shiftIndex[1][curBreakIndex]+':'+shiftIndex[1][curBreakIndex+1]).style(bold);
-                        sheet.cell(i+padding+1,1).string('From').style(bold);
-                        sheet.cell(i+padding+1,2).string('To').style(bold);
-                        sheet.cell(i+padding+1,3).string('Duration').style(bold);
 
-                        padding+=2;
+                let indexForCheck=Math.floor(curBreakIndex/2);
+                if(!written[indexForCheck]){
+                    for(let j=0;j<=indexForCheck;j++){
+                        if(!written[j]){
+                            written[j]=true;
+                            sheet.cell(i+padding).string(shiftIndex[0][2*j]+':'+shiftIndex[0][2*j+1]+' to '+shiftIndex[1][2*j]':'+shiftIndex[1][2*j+1]).style(bold);
+                            sheet.cell(i+padding+1).string('--Empty--').style(style);
+                            padding+=2;
+                        }
                     }
                 }
 
@@ -113,17 +107,6 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
                 sheet.cell(i+padding,1).string(from.toTimeString().slice(0,8)).style(style);
                 sheet.cell(i+padding,2).string(to.toTimeString().slice(0,8)).style(style);
                 sheet.cell(i+padding,3).string(hh+':'+mm+':'+ss).style(style);
-
-                if(printAfterInt){
-                    if(curBreakIndex<=7){
-                        sheet.cell(i+padding+1,1).string(shiftIndex[0][curBreakIndex]+':'+shiftIndex[0][curBreakIndex+1]+' to '+shiftIndex[1][curBreakIndex]+':'+shiftIndex[1][curBreakIndex+1]).style(bold);
-                        sheet.cell(i+padding+2,1).string('From').style(bold);
-                        sheet.cell(i+padding+2,2).string('To').style(bold);
-                        sheet.cell(i+padding+2,3).string('Duration').style(bold);
-
-                        padding+=2;
-                    }
-                }
             }
 
             if(padding==6){
