@@ -90,7 +90,7 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
                     for(let j=0;j<=indexForCheck;j++){
                         if(!written[j]){
                             written[j]=true;
-                            sheet.cell(i+padding).string(shiftIndex[0][2*j]+':'+shiftIndex[0][2*j+1]+' to '+shiftIndex[1][2*j]':'+shiftIndex[1][2*j+1]).style(bold);
+                            sheet.cell(i+padding).string(shiftIndex[0][2*j]+':'+shiftIndex[0][2*j+1]+' to '+shiftIndex[1][2*j]+':'+shiftIndex[1][2*j+1]).style(bold);
                             sheet.cell(i+padding+1).string('--Empty--').style(style);
                             padding+=2;
                         }
