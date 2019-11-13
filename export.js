@@ -60,19 +60,16 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
                                 from: endBreakT.toISOString(),
                                 to: machine.stopDurations[i].to
                             });
-                            curBreakIndex+=2;
                         }
                         machine.stopDurations[i].to=startBreakT.toISOString();
                         to=startBreakT;
                     }else if(from.getTime()<startBreakT.getTime()){
                         machine.stopDurations[i].to=startBreakT.toISOString();
                         to=startBreakT;
-                        curBreakIndex+=2;
                     }else if(to.getTime()>endBreakT.getTime() && from.getTime()<=endBreakT.getTime()){
                         if(curBreakIndex<7){
                             machine.stopDurations[i].from=endBreakT.toISOString();
                             from=endBreakT;
-                            curBreakIndex+=2;
                         }else{
                             machine.stopDurations.splice(i,1);
                             i--;
@@ -82,19 +79,28 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
                         machine.stopDurations.splice(i,1);
                         i--;
                         continue;
+                    }else{
+                        curBreakIndex+=2;
+                        break;
                     }
                 }
 
                 let indexForCheck=Math.floor(curBreakIndex/2);
                 if(!written[indexForCheck]){
-                    for(let j=0;j<=indexForCheck;j++){
+                    for(let j=0;j<indexForCheck;j++){
                         if(!written[j]){
                             written[j]=true;
-                            sheet.cell(i+padding).string(shiftIndex[0][2*j]+':'+shiftIndex[0][2*j+1]+' to '+shiftIndex[1][2*j]+':'+shiftIndex[1][2*j+1]).style(bold);
-                            sheet.cell(i+padding+1).string('--Empty--').style(style);
+                            sheet.cell(i+padding,1).string(shiftIndex[0][2*j]+':'+shiftIndex[0][2*j+1]+' to '+shiftIndex[1][2*j]+':'+shiftIndex[1][2*j+1]).style(bold);
+                            sheet.cell(i+padding+1,1).string('--Empty--').style(style);
                             padding+=2;
                         }
                     }
+                    written[indexForCheck]=true;
+                    sheet.cell(i+padding,1).string(shiftIndex[0][2*indexForCheck]+':'+shiftIndex[0][2*indexForCheck+1]+' to '+shiftIndex[1][2*indexForCheck]+':'+shiftIndex[1][2*indexForCheck+1]).style(bold);
+                    sheet.cell(i+padding+1,1).string('From').style(bold);
+                    sheet.cell(i+padding+1,2).string('To').style(bold);
+                    sheet.cell(i+padding+1,3).string('Duration').style(bold);
+                    padding+=2;
                 }
 
                 let duration=Math.floor((to-from)/1000);
