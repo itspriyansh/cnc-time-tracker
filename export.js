@@ -43,9 +43,12 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
             }
 
             let sheet=workbook.addWorksheet(machine.name), curBreakIndex=0;
+            sheet.cell(1,1).string('Name').style(bold);
+            sheet.cell(1,2).string(machine.name).style(style);
+            
             let written=[false,false,false,false,false];
 
-            var totalOperation=actualEnd-actualStart-3600000,totalStoppage=0,padding=6;
+            var totalOperation=actualEnd-actualStart-3600000,totalStoppage=0,padding=4;
             for(let i=0;i<machine.stopDurations.length;i++){
                 let from=new Date(machine.stopDurations[i].from),to=new Date(machine.stopDurations[i].to);
                 let startBreakT=new Date(Yr,Mn,Dt,startBreak[curBreakIndex],startBreak[curBreakIndex+1],0,0);
@@ -81,7 +84,6 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
                         continue;
                     }else{
                         curBreakIndex+=2;
-                        break;
                     }
                 }
 
