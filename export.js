@@ -84,6 +84,8 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
                         continue;
                     }else{
                         curBreakIndex+=2;
+                        i--;
+                        continue;
                     }
                 }
 
@@ -117,6 +119,11 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
                 sheet.cell(i+padding,3).string(hh+':'+mm+':'+ss).style(style);
             }
 
+            if(padding==4){
+                sheet.cell(machine.stopDurations.length+padding).string('09:00 to 11:00').style(bold);
+                sheet.cell(machine.stopDurations.length+padding+1).string('--Empty--').style(style);
+                padding+=2;
+            }
             if(padding==6){
                 sheet.cell(machine.stopDurations.length+padding).string('11:15 to 13:00').style(bold);
                 sheet.cell(machine.stopDurations.length+padding+1).string('--Empty--').style(style);
@@ -166,7 +173,7 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
 		.then((sheet) => {
 			mailer.sendMail({
 				from: '"Priyansh Bhardwaj" <priyanshbh@gmail.com>',
-				to: 'priyanshbhj@gmail.com',
+				to: 'atulmist@gmail.com',
 				subject: 'Stop Timings of '+new Date().toDateString(),
 				text: 'Please find excel sheet in attachment',
 				attachments: [{'filename': 'StopTimings '+new Date().toDateString()+'.xlsx', 'content': sheet}]
