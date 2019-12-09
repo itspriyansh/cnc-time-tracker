@@ -11,6 +11,7 @@ var printBreak = (index) => {
 };
 
 var timeString = (duration) => {
+    if(duration<0) duration=0;
     let hh=Math.floor(duration/3600),mm=Math.floor((duration%3600)/60),ss=(duration%60);
 
     if(hh<10) hh='0'+hh;
@@ -29,8 +30,7 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
     }).then(() => {
         return Machine.find();
     }).then((machines) => {
-        // let startBreak=[11,0,13,0,15,0,17,30,21,30], endBreak=[11,15,13,30,15,15,17,30,21,30];
-        let startBreak=[13,24,13,26,13,28,13,30,13,32], endBreak=[13,25,13,27,13,29,13,30,13,32];
+        let startBreak=[11,0,13,0,15,0,17,30,21,30], endBreak=[11,15,13,30,15,15,17,30,21,30];
 
         let shiftIndex=[
             ['09','00','11','15','13','30','15','15','17','30'],
