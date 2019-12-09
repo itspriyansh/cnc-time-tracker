@@ -1,5 +1,7 @@
 var mongoose = require('mongoose');
 
+// Schema of collection that tracks status and stop-durations of machines on current day
+
 const MachineSchema = mongoose.Schema({
     name: {
         type: String,

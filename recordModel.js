@@ -1,5 +1,7 @@
 var mongoose = require('mongoose');
 
+// Schema of collection the records stop-durations of all machines everyday
+
 var RecordSchema= mongoose.Schema({
 	name:{
 		type: 'String',
