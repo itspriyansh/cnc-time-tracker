@@ -30,6 +30,7 @@ mongoose.connect("mongodb://localhost:27017/machines", {
 	var actualEnd;
     client.on('message',(topic,body) => {
         let data=JSON.parse(body), toInsert=[];
+
         let today=new Date(data.timestamp), Dt=today.getDate(), Mn=today.getMonth(), Yr=today.getFullYear();
         let start=new Date(Yr,Mn,Dt,9,0,0,0), endD=new Date(Yr,Mn,Dt,21,30,0,0);
         if(!stopped && !connected){
