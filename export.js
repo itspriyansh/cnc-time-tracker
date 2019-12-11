@@ -142,8 +142,9 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
                             from=endBreakT;
                         }else{
                             machine.stopDurations.splice(i,1);
-                            i--;
                         }
+                        curBreakIndex+=2;
+                        i--;
                         continue;
                     }
                     // Simply delete the duration it fully lies in break interval
