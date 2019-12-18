@@ -150,40 +150,41 @@ mongoose.connect("mongodb://localhost:27017/machines", {
                 }
             }
 
-            // if list of new machines is not empty
-            if(toInsert.length!==0){
-                // insert all the new machines into database
-                Machine.insertMany(toInsert, (err,mac) => {
-                    if(err){
-                        console.log(err);
-                        return;
-                    }
-                    mac.forEach(machine => {
-                        // Now add each new machine to local variable 'machines'
-                        if(names[machine.name]===undefined){
-                            names[machine.name]=machines.length;
-                            machines.push({
-                                name: machine.name,
-                                startTime: machine.startTime,
-                                stopTime: machine.stopTime,
-                                functioning: machine.functioning,
-                                stopDurations: machine.stopDurations
-                            });
-                        }
-                    });
-                    // Empty the list of new machines
-                    toInsert=[];
-                });
-            };
+        }
 
-            // if the shift has came to an end
-            if(today.getTime()>=endD.getTime()){
-                // Start processing of data into excel sheet and send it via mail
-                exportData(transporter, start, today,Yr,Mn,Dt);
-                connected=false; // End of the Day
-                // Notifies that tracking is inactive now
-                console.log("Tracking is stopped for today!");
-            }
+        // if list of new machines is not empty
+        if(toInsert.length!==0){
+            // insert all the new machines into database
+            Machine.insertMany(toInsert, (err,mac) => {
+                if(err){
+                    console.log(err);
+                    return;
+                }
+                mac.forEach(machine => {
+                    // Now add each new machine to local variable 'machines'
+                    if(names[machine.name]===undefined){
+                        names[machine.name]=machines.length;
+                        machines.push({
+                            name: machine.name,
+                            startTime: machine.startTime,
+                            stopTime: machine.stopTime,
+                            functioning: machine.functioning,
+                            stopDurations: machine.stopDurations
+                        });
+                    }
+                });
+                // Empty the list of new machines
+                toInsert=[];
+            });
+        };
+
+        // if the shift has came to an end
+        if(today.getTime()>=endD.getTime()){
+            // Start processing of data into excel sheet and send it via mail
+            exportData(transporter, start, today,Yr,Mn,Dt);
+            connected=false; // End of the Day
+            // Notifies that tracking is inactive now
+            console.log("Tracking is stopped for today!");
         }
     });
 },(err)=>console.log(err));
