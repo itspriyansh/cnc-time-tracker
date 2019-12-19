@@ -8,8 +8,8 @@ var mailer = require('nodemailer');
 var transporter = mailer.createTransport({
 	service: 'gmail', // Host Mail Service
 	auth: {
-		user: 'priyanshbh@gmail.com', // Host mail id
-		pass: '9828490944@leavemealone' // Password of host mail id
+		user: 'sfwreport@gmail.com', // Host mail id
+		pass: 'Smart@1234' // Password of host mail id
 	},
 	tls: { rejectUnauthorized: false }
 });

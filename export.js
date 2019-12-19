@@ -314,7 +314,7 @@ module.exports = (mailer, actualStart, actualEnd, Yr, Mn, Dt) => {
         workbook.writeToBuffer()
 		.then((sheet) => {
 			mailer.sendMail({
-				from: '"Priyansh Bhardwaj" <priyanshbh@gmail.com>',
+				from: '"CNC Time Tracker" <sfwreport@gmail.com>',
 				to: 'atulmist@gmail.com',
 				subject: 'Stop Timings of '+new Date().toDateString(),
 				text: 'Please find excel sheet in attachment',
